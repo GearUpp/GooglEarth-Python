@@ -3,17 +3,18 @@ import geemap
 import datetime
 import time
 import os
-import ollama
-
+#import ollama
+import notebook
 from IPython.core.display_functions import display
+import ipywidgets
 
 # run       python3 -m notebook      in shell to start Jupyter server
 clientID =  '7682362737-sbrre3pn00vk7nfngujou7jmil5eqpes.apps.googleusercontent.com'
-#ee.Authenticate(auth_mode=locals,quiet=True)
+ee.Authenticate(auth_mode=locals,quiet=True)
 ee.Initialize(project="learning-project-436517")
 print(ee.String("ee, imported, auth complete").getInfo())
 
-
+#========================================================================================= Polygon Start ======================================================================================================================================
 Ukraine = {
     "geodesic": False,
     "type": "Polygon",
@@ -60,13 +61,10 @@ Gaza = {
         ]
     ]
 }
-
 Location = Odesa # redefine location for testing
+#========================================================================================= Polygon End ======================================================================================================================================
 
-Map = geemap.Map(center=(40, -100), zoom=4)
-Map.add_basemap("OpenTopoMap")
-Map
-
+#========================================================================================= Dates Start ======================================================================================================================================
 
 py_date = datetime.date.today().isoformat()
 ee_date = ee.Date(py_date.format())  # epoch format
@@ -75,62 +73,18 @@ ee_date = ee.Date(py_date.format())  # epoch format
 print(f"py_date: {py_date}")
 print(f"ee_date: {ee_date.getInfo()['value']}")
 
-Today = ee_date
-Past = ee_date
-Past1 = ee_date
-Past2 = ee_date
+Today = ee_date                         #   }-Short 14 day period for "current"  Data
+Past = ee_date.advance(-14, 'day')  #   }
 
+Past1 = ee_date.advance(-30, 'day') #   }-Short 30 day period to gather "past" Data
+Past2 = ee_date.advance(-60, 'day') #   }
 
-Past1 = display(Past1.advance(6, 'day'))  #  60 days
-print(Past1)
-Past2 = Past2 - 5184000     # Past Date range End      5184000 = 60 days
-Past = Past - 1296000       # Past for current events capture  1296000 = 15 days
-Past1 = f"{Past1.getFullYear()}-{(Past1.getMonth() + 1)}-{Past1.getDate()}"
-Past2 = f"{Past2.getFullYear()}-{(Past2.getMonth() + 1)}-{Past2.getDate()}"
-print(f"Today: {Today}, Past: {Past}, Past1: {Past1}, Past2: {Past2}")
+#========================================================================================= Dates End ======================================================================================================================================
 
+#========================================================================================= Map Start ======================================================================================================================================
 
+Map = geemap.Map(center=(40, -100), zoom=4)
+Map.add_basemap("OpenTopoMap")
+display(Map)
 
-for x in range(2):
-    # Sat Decleration Area
-    Radar = ((ee.ImageCollection('COPERNICUS/S1_GRD').filterDate(Past, Today)
-             .filterBounds(Ukraine)
-             .filter(ee.Filter.lt("resolution_meters", 13)).select("VV", "VH"))
-             .filterBounds(Ukraine))
-    S2 = (((((ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
-          .filterDate(Past, Today))
-          .filterBounds(Ukraine))
-          .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", 3)))
-          .select("SCL"))
-          .filterBounds(Ukraine))
-    Visual = (((((ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
-              .filterDate(Past, Today))
-              .filterBounds(Ukraine))
-              .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", 5)))
-              .select("TCI_R", "TCI_G", "TCI_B"))
-              .filterBounds(Ukraine))
-    Built = ((((ee.ImageCollection("GOOGLE/DYNAMICWORLD/V1")
-             .filterDate(Past, Today))
-             .filterBounds(Ukraine))
-             .select("built"))
-             .mosaic().round().toInt())
-    print(Radar.getInfo().features[0])
-    #Asending and Desending V / H Band Selection
-
-    VV = Radar.select("VV").mosaic().unitScale(-2, 25).clamp(0, 1)  # Some flat feilds show up, minimul
-    VH = Radar.select("VH").mosaic().unitScale(-8, 5).clamp(0, 1)
-    CombinedRadar = VH.add(VV).updateMask(ee.Geometry(Ukraine))
-    # Modifying Sat Data
-    S2 = S2.mosaic().unitScale(4, 5).clamp(0, 1).toInt()
-    multiPointAssessment = ((CombinedRadar.add(S2).add(Built)).unitScale(2, 3).ceil().clamp(0, 1))
-    #multiPointAssessment.updateMask(multiPointAssessment)
-
-    # Where data is stored in global var
-    if not RadarMaskedCurrent:
-        RadarMaskedCurrent = CombinedRadar.updateMask(S2).ceil().clamp(0, 1)
-        VisualCurrent = Visual
-    else:
-        RadarMaskedPast = CombinedRadar.updateMask(S2).ceil().clamp(0, 1)
-        VisualPast = Visual
-    test = S2
-
+#========================================================================================= Map End ======================================================================================================================================
