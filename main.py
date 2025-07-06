@@ -9,6 +9,7 @@ from IPython.core.display_functions import display
 import ipywidgets
 
 # run       python3 -m notebook      in shell to start Jupyter server
+clientID =  '7682362737-sbrre3pn00vk7nfngujou7jmil5eqpes.apps.googleusercontent.com'
 ee.Authenticate(auth_mode=locals,quiet=True)
 ee.Initialize(project="learning-project-436517")
 print(ee.String("ee, imported, auth complete").getInfo())
