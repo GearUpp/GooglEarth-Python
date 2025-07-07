@@ -4,7 +4,7 @@ import datetime
 import time
 import os
 #import ollama
-import notebook
+#import notebook
 from IPython.core.display_functions import display
 import ipywidgets
 
